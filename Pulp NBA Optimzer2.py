@@ -2,13 +2,21 @@ from pulp import *
 import pandas as pd
 from datetime import datetime
 
+#reading the data
 df = pd.read_clipboard()
 df = df.query("Exclude != 1")
-teams = df.Team.unique()
-salary = df.Credits.to_list()
-projection = df.Projection.to_list()
-num_lineups = 20
 
+#getting the unique teams
+teams = df.Team.unique()
+
+#Storing the player credits
+salary = df.Credits.to_list()
+
+#Storing the projections
+projection = df.Projection.to_list()
+num_lineups = 20 #Number of lineups to be generated
+
+#Working on exposure numbers
 props = round((df.Exposure*num_lineups),0).to_dict()
 props = {x : props[x] for x in props.keys() if props[x] > 0 }
 proj = dict()
@@ -18,9 +26,14 @@ for i in range(len(df)):
         proj[(i,j)] = projection[i]
         sal[(i,j)] = salary[i]        
 start=datetime.now()
-   
+
+#Setting up the optimisation problem
 prob = LpProblem("NBA_optimizer", sense = LpMaximize)
+
+#Choice variables
 choices = LpVariable.dicts("choice",((i,j)  for j in range(num_lineups) for i in range(len(df))), cat = LpBinary)
+
+#Adding objective
 objective = lpSum([choices[i, j] * proj[i,j] for i, j in choices])
 prob += objective
 cur_lineup = 0
